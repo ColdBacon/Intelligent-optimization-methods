@@ -37,8 +37,48 @@ def draw_path(coords, path, color='blue'):
         a, b = cycle[i], cycle[i+1]
         plt.plot([coords.x[a+1], coords.x[b+1]], [coords.y[a+1], coords.y[b+1]], color=color)
 
-def nearest_neighbor():
-    pass
+def nearest_neighbor(pos):
+    coords = pd.read_csv('data/kroA100.tsp', sep=' ',
+                         names=['n', 'x', 'y'], skiprows=6, skipfooter=1, engine='python')
+    point = coords.drop(columns=['n']).values
+    distance = np.array(
+        [[np.sqrt((point[i][0] - point[j][0]) ** 2 + (point[i][1] - point[j][1]) ** 2) for i in range(len(point))] for j
+         in range(len(point))])
+    point, distance, first_route, distance_f = nearest_neighbor_path(point, distance, pos)
+    pos = pos - 50
+    point, distance, second_route, distance_s = nearest_neighbor_path(point, distance, pos)
+
+    return first_route, second_route, distance_f + distance_s
+
+def nearest_neighbor_path(point, distance, pos):
+    route = np.zeros((51, 2))  # do przechowywania punktów w kolejnojści vojaży
+    road_distance = []  # do przechowywania dystansów w kolejnojści vojaży
+    temp_point = pos  # pozycja początkowa
+    route[-1:] = point[temp_point]
+    route[0:] = point[temp_point]
+    for i in range(49):
+        min_distance = np.min(distance[temp_point][distance[temp_point] != 0])
+        help_point = list(distance[temp_point, :]).index(min_distance)  # nowa pozycja początkowa
+        route[i + 1, :] = point[help_point]
+
+        distance = np.delete(distance, temp_point, 0)
+        distance = np.delete(distance, temp_point, 1)
+        point = np.delete(point, temp_point, 0)
+
+        if (help_point < temp_point):
+            temp_point = help_point
+        else:
+            temp_point = help_point - 1
+
+        road_distance.append(min_distance)
+
+    road_distance.append(np.sqrt((route[-2][0] - route[-1][0]) ** 2 + (route[-2][1] - route[-1][1]) ** 2))
+    distance = np.delete(distance, temp_point, 0)
+    distance = np.delete(distance, temp_point, 1)
+    point = np.delete(point, temp_point, 0)
+    route_all = np.sum(road_distance)
+
+    return point, distance, route, route_all
 
 def greedy_cycle(dist, start):
     n_points = dist.shape[0]
@@ -112,7 +152,15 @@ def main():
     draw_path(coords, best_path_a)
     draw_path(coords, best_path_b, color='red')
     plt.scatter(coords.x, coords.y, color='black')
-    plt.show()   
+    plt.show()
+    '''solutions = [nearest_neighbor(pos) for pos in range(100)]
+    dis = [solutions[i][2] for i in range(100)]
+    best_index = np.argmin(dis)
+    best_path_a, best_path_b = solutions[best_index][0], solutions[best_index][1]
+    plt.plot([best_path_a[:, 0], best_path_b[:, 0]], [best_path_a[:, 1], best_path_b[:, 1]], 'o', color='black')
+    plt.plot(best_path_a[:, 0], best_path_a[:, 1], color='red')
+    plt.plot(best_path_b[:, 0], best_path_b[:, 1], color='blue')
+    plt.show()'''
 
 if __name__ == "__main__":
     main()
