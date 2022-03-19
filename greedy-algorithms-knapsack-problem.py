@@ -37,12 +37,12 @@ def draw_path(coords, path, color='blue'):
         a, b = cycle[i], cycle[i+1]
         plt.plot([coords.x[a+1], coords.x[b+1]], [coords.y[a+1], coords.y[b+1]], color=color)
 
-def nearest_neighbor(pos):
-    coords = pd.read_csv('data/kroA100.tsp', sep=' ',
+def nearest_neighbor(pos,path):
+    coords = pd.read_csv(path, sep=' ',
                          names=['n', 'x', 'y'], skiprows=6, skipfooter=1, engine='python')
     point = coords.drop(columns=['n']).values
     distance = np.array(
-        [[np.sqrt((point[i][0] - point[j][0]) ** 2 + (point[i][1] - point[j][1]) ** 2) for i in range(len(point))] for j
+        [[np.round(np.sqrt((point[i][0] - point[j][0]) ** 2 + (point[i][1] - point[j][1]) ** 2)) for i in range(len(point))] for j
          in range(len(point))])
     point, distance, first_route, distance_f = nearest_neighbor_path(point, distance, pos)
     pos = pos - 50
@@ -72,12 +72,11 @@ def nearest_neighbor_path(point, distance, pos):
 
         road_distance.append(min_distance)
 
-    road_distance.append(np.sqrt((route[-2][0] - route[-1][0]) ** 2 + (route[-2][1] - route[-1][1]) ** 2))
+    road_distance.append(np.round(np.sqrt((route[-2][0] - route[-1][0]) ** 2 + (route[-2][1] - route[-1][1]) ** 2)))
     distance = np.delete(distance, temp_point, 0)
     distance = np.delete(distance, temp_point, 1)
     point = np.delete(point, temp_point, 0)
     route_all = np.sum(road_distance)
-
     return point, distance, route, route_all
 
 def greedy_cycle(dist, start):
@@ -142,25 +141,43 @@ def k_regret(dist, start):
 
 
 def main():
-    distances, coords = create_dist_matrix('data/kroA100.tsp')
-    #start = random.randint(0,99)
-    solutions = [k_regret(distances, start) for start in range(100)] # or greedy_cycle()
-    scores = [cycle_score(distances, solution[0]) + cycle_score(distances,solution[1]) for solution in solutions]
-    best_index = np.argmin(scores)
-    print("Best score: ",scores[best_index])
-    [best_path_a, best_path_b] = solutions[best_index]
-    draw_path(coords, best_path_a)
-    draw_path(coords, best_path_b, color='red')
-    plt.scatter(coords.x, coords.y, color='black')
-    plt.show()
-    '''solutions = [nearest_neighbor(pos) for pos in range(100)]
-    dis = [solutions[i][2] for i in range(100)]
-    best_index = np.argmin(dis)
-    best_path_a, best_path_b = solutions[best_index][0], solutions[best_index][1]
-    plt.plot([best_path_a[:, 0], best_path_b[:, 0]], [best_path_a[:, 1], best_path_b[:, 1]], 'o', color='black')
-    plt.plot(best_path_a[:, 0], best_path_a[:, 1], color='red')
-    plt.plot(best_path_b[:, 0], best_path_b[:, 1], color='blue')
-    plt.show()'''
+    paths = ['data/kroA100.tsp','data/kroB100.tsp']
+    for path in paths:
+        solutions = [nearest_neighbor(pos,path) for pos in range(100)]
+        dis = [solutions[i][2] for i in range(100)]
+        best_index = np.argmin(dis)
+        print(f'nearest_neighbor: {np.mean(dis)}({np.min(dis)}-{np.max(dis)})')
+        best_path_a, best_path_b = solutions[best_index][0], solutions[best_index][1]
+        plt.plot([best_path_a[:, 0], best_path_b[:, 0]], [best_path_a[:, 1], best_path_b[:, 1]], 'o', color='black')
+        plt.plot(best_path_a[:, 0], best_path_a[:, 1], color='red')
+        plt.plot(best_path_b[:, 0], best_path_b[:, 1], color='blue')
+        plt.show()
+
+        distances, coords = create_dist_matrix(path)
+        # start = random.randint(0,99)
+        solutions = [greedy_cycle(distances, start) for start in range(100)]
+        scores = [cycle_score(distances, solution[0]) + cycle_score(distances, solution[1]) for solution in solutions]
+        best_index = np.argmin(scores)
+        print(f'greedy_cycle: {np.mean(scores)}({np.min(scores)}-{np.max(scores)})')
+        [best_path_a, best_path_b] = solutions[best_index]
+        draw_path(coords, best_path_a)
+        draw_path(coords, best_path_b, color='red')
+        plt.scatter(coords.x, coords.y, color='black')
+        plt.show()
+
+        distances, coords = create_dist_matrix(path)
+        #start = random.randint(0,99)
+        solutions = [k_regret(distances, start) for start in range(100)]
+        scores = [cycle_score(distances, solution[0]) + cycle_score(distances,solution[1]) for solution in solutions]
+        best_index = np.argmin(scores)
+        print(f'k_regret: {np.mean(scores)}({np.min(scores)}-{np.max(scores)})')
+        [best_path_a, best_path_b] = solutions[best_index]
+        draw_path(coords, best_path_a)
+        draw_path(coords, best_path_b, color='red')
+        plt.scatter(coords.x, coords.y, color='black')
+        plt.show()
+
+
 
 if __name__ == "__main__":
     main()
