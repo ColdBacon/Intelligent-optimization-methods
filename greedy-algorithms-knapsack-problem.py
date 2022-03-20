@@ -41,8 +41,9 @@ def nearest_neighbor(pos,path):
     coords = pd.read_csv(path, sep=' ',
                          names=['n', 'x', 'y'], skiprows=6, skipfooter=1, engine='python')
     point = coords.drop(columns=['n']).values
+
     distance = np.array(
-        [[np.round(np.sqrt((point[i][0] - point[j][0]) ** 2 + (point[i][1] - point[j][1]) ** 2)) for i in range(len(point))] for j
+        [[np.floor(np.sqrt((point[i][0] - point[j][0]) ** 2 + (point[i][1] - point[j][1]) ** 2)) for i in range(len(point))] for j
          in range(len(point))])
     point, distance, first_route, distance_f = nearest_neighbor_path(point, distance, pos)
     pos = pos - 50
@@ -72,7 +73,7 @@ def nearest_neighbor_path(point, distance, pos):
 
         road_distance.append(min_distance)
 
-    road_distance.append(np.round(np.sqrt((route[-2][0] - route[-1][0]) ** 2 + (route[-2][1] - route[-1][1]) ** 2)))
+    road_distance.append(np.floor(np.sqrt((route[-2][0] - route[-1][0]) ** 2 + (route[-2][1] - route[-1][1]) ** 2)))
     distance = np.delete(distance, temp_point, 0)
     distance = np.delete(distance, temp_point, 1)
     point = np.delete(point, temp_point, 0)
@@ -141,9 +142,10 @@ def k_regret(dist, start):
 
 
 def main():
-    paths = ['data/kroA100.tsp','data/kroB100.tsp']
+    paths = ['data/kroA100.tsp','data/kroB100.tsp']#
     for path in paths:
-        solutions = [nearest_neighbor(pos,path) for pos in range(100)]
+
+        solutions = [nearest_neighbor(pos, path) for pos in range(100)]
         dis = [solutions[i][2] for i in range(100)]
         best_index = np.argmin(dis)
         print(f'nearest_neighbor: {np.mean(dis)}({np.min(dis)}-{np.max(dis)})')
@@ -164,6 +166,8 @@ def main():
         draw_path(coords, best_path_b, color='red')
         plt.scatter(coords.x, coords.y, color='black')
         plt.show()
+
+
 
         distances, coords = create_dist_matrix(path)
         #start = random.randint(0,99)
