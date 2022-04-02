@@ -43,8 +43,9 @@ def swap_vertices_inside(path, i, j):
 def swap_edges_inside(path, i, j):
     # swap two edges in one cycle 
     # i,j - indexes of start vertices of the edges to be replaced
-    #TODO what if i is a neighbor of j
-    path[i:j] = reversed(path[i:j])
+    _len = len(path)
+    if j - i != 1 or j - i != _len - 1:
+        path[i:j] = reversed(path[i:j])
 
 def delta_replace_vertex(distances, path, i, new):
     # i - index of vertex to be replace by "new" vertex
