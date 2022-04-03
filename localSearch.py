@@ -45,9 +45,7 @@ def swap_vertices_inside(path, i, j):
 def swap_edges_inside(path, i, j):
     # swap two edges in one cycle 
     # i,j - indexes of start vertices of the edges to be replaced
-    _len = len(path)
-    if j - i != 1 or j - i != _len - 1:
-        path[i:j] = reversed(path[i:j])
+    path[i:j+1] = reversed(path[i:j+1])
     return path
 
 def delta_replace_vertex(distances, path, i, new):
@@ -77,8 +75,11 @@ def delta_swap_vertices_inside(distances, path, i, j):
 def delta_swap_edges_inside(distances, path, i, j):
     # score delta cost function value after swaping 2 edges where i,j - indexes of start vertices of the edges 
     _len = len(path)
-    start_i, end_i, start_j, end_j = path[(i - 1)%_len], path[i], path[j], path[(j+1)%_len]
-    return distances[start_i, start_j] + distances[end_i, end_j] - distances[start_i, end_i] - distances[start_j, end_j]
+    if j - i == 1 or j - i == _len - 1:
+        return 0
+    else:
+        start_i, end_i, start_j, end_j = path[(i - 1)%_len], path[i], path[j], path[(j+1)%_len]
+        return distances[start_i, start_j] + distances[end_i, end_j] - distances[start_i, end_i] - distances[start_j, end_j]
 
 def generate_candidates_outside(paths):
     # calculate cartesian product of the index list of two paths
@@ -101,7 +102,6 @@ def steepest_v_v(distances, path):
     vertex_out = np.argmin(help_delta_out)
     min_out = min(help_delta_out)
     #print(vertex_v_out)
-
 
     list_in_a = generate_candidates_inside(path[0])
     help_delta_in_a = [delta_swap_vertices_inside(distances, path[0], list_in_a[i][0], list_in_a[i][1]) for i in range(len(list_in_a))]
@@ -126,7 +126,6 @@ def steepest_v_v(distances, path):
         if min_in_a >= 0:
             return path
         else:
-
             i,j = list_in_a[vertex_in_a]
 
             new_path = [swap_vertices_inside(path[0], i, j), path[1]]
@@ -135,7 +134,6 @@ def steepest_v_v(distances, path):
         if min_in_b >= 0:
             return path
         else:
-
             i,j = list_in_b[vertex_in_b]
 
             new_path = [path[0], swap_vertices_inside(path[1], i, j) ]
@@ -148,20 +146,21 @@ def steepest_v_e(distances, path):
                       range(len(list_out))]
     vertex_out = np.argmin(help_delta_out)
     min_out = min(help_delta_out)
-    # print(vertex_v_out)
+    #print("Vertices outside:",list_out[vertex_out], min_out)
 
     list_in_a = generate_candidates_inside(path[0])
     help_delta_in_a = [delta_swap_edges_inside(distances, path[0], list_in_a[i][0], list_in_a[i][1]) for i in
                        range(len(list_in_a))]
     vertex_in_a = np.argmin(help_delta_in_a)
     min_in_a = min(help_delta_in_a)
+    #print("Edges inside 1:",list_in_a[vertex_in_a], min_in_a)
 
     list_in_b = generate_candidates_inside(path[1])
     help_delta_in_b = [delta_swap_edges_inside(distances, path[1], list_in_b[i][0], list_in_b[i][1]) for i in
                        range(len(list_in_b))]
     vertex_in_b = np.argmin(help_delta_in_b)
     min_in_b = min(help_delta_in_b)
-    # print(help_delta_v_in)
+    #print("Edges inside 2:",list_in_b[vertex_in_b], min_in_b)
 
     if min_out < min_in_a and min_out < min_in_b:
         if min_out >= 0:
@@ -181,7 +180,6 @@ def steepest_v_e(distances, path):
         if min_in_b >= 0:
             return path
         else:
-
             i, j = list_in_b[vertex_in_b]
             new_path = [path[0], swap_edges_inside(path[1], i, j)]
             return steepest_v_e(distances, new_path)
@@ -199,7 +197,6 @@ def greedy_v_v(distances, path):
     help_delta_in_a = delta_swap_vertices_inside(distances, path[0], list_in_a[idx][0], list_in_a[idx][1])
     help_delta_in_b = delta_swap_vertices_inside(distances, path[0], list_in_b[idx][0], list_in_b[idx][1])
 
-
     if help_delta_out < help_delta_in_a  and help_delta_out < help_delta_in_b:
         if help_delta_out >= 0:
             return path
@@ -211,7 +208,6 @@ def greedy_v_v(distances, path):
         if help_delta_in_a  >= 0:
             return path
         else:
-
             i,j = list_in_a[idx]
 
             new_path = [swap_vertices_inside(path[0], i, j), path[1]]
@@ -220,7 +216,6 @@ def greedy_v_v(distances, path):
         if help_delta_in_b >= 0:
             return path
         else:
-
             i,j = list_in_b[idx]
 
             new_path = [path[0], swap_vertices_inside(path[1], i, j) ]
@@ -235,7 +230,7 @@ def main():
 
     distances, coords = create_dist_matrix(path)
     solution = [random_solution(distances,i) for i in range(100)]
-    solutions = [greedy_v_v(distances, solution[i]) for i in range(100) ]
+    solutions = [steepest_v_e(distances, solution[i]) for i in range(100)]
     scores = [cycle_score(distances, solution[0]) + cycle_score(distances, solution[1]) for solution in solutions]
     best_index = np.argmin(scores)
     print(f'Steepest: {np.mean(scores)}({np.min(scores)}-{np.max(scores)})')
@@ -272,7 +267,6 @@ def main():
     plt.scatter(coords.x, coords.y, color='black')
     plt.show()
     """
-
 
 if __name__ == "__main__":
     main()
