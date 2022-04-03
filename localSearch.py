@@ -4,6 +4,7 @@ import random
 import matplotlib.pyplot as plt
 import itertools
 import time
+from copy import deepcopy
 from greedyAlgorithms_TSP import *
 
 def plot_solutions(coords, solutions_list):
@@ -32,6 +33,9 @@ def random_solution(dist_matrix,i):
     random.shuffle(list_of_points)
     paths = [list_of_points[:n_points//2], list_of_points[n_points//2:]]
     return paths
+
+def score(cities, paths):
+    return cycle_score(cities, paths[0]) + cycle_score(cities, paths[1])
 
 def swap_vertices_outside(paths, i, j):
     # exchange of two vertices in between two cycles
@@ -96,8 +100,38 @@ def generate_candidates_inside(path):
             combinations.append([i, j])
     return combinations
 
-def random_searching(distances, path, time):
-    pass
+def random_searching(distances, paths, time_limit):
+
+    random.seed()
+    best_score = score(distances, paths)
+    best_result = paths
+    start = time.time()
+    while time.time() - start < time_limit: 
+        list_out = generate_candidates_outside(paths)
+        list_in_a = generate_candidates_inside(paths[0])
+        list_in_b = generate_candidates_inside(paths[1])
+        n = random.randint(0,4)
+        if n == 0:
+            [i, j] = random.choice(list_out)
+            new_path = swap_vertices_outside(paths, i, j)
+        elif n == 1:
+            [i, j] = random.choice(list_in_a)
+            new_path = [swap_vertices_inside(paths[0], i, j), paths[1]]
+        elif n == 2:
+            [i, j] = random.choice(list_in_b)
+            new_path = [paths[0], swap_vertices_inside(paths[1], i, j)]
+        elif n == 3:
+            [i, j] = random.choice(list_in_a)
+            new_path = [swap_edges_inside(paths[0], i, j), paths[1]]
+        elif n == 4:
+            [i, j] = random.choice(list_in_b)
+            new_path = [paths[0], swap_edges_inside(paths[1], i, j)]
+
+        new_score = score(distances, new_path)
+        if new_score < best_score:
+            best_score = new_score
+            best_result = deepcopy(new_path)
+    return best_result
 
 def steepest_v_v(distances, path):
     list_out = generate_candidates_outside(path)
@@ -231,15 +265,17 @@ def main():
     path = paths[0]
 
     distances, coords = create_dist_matrix(path)
+    # solution = [k_regret(distances,i) for i in range(100)]
     solution = [random_solution(distances,i) for i in range(100)]
     times = []
     solutions = []
     for i in range(100):
         start = time.time()
-        result = greedy_v_v(distances, solution[i])
+        result = random_searching(distances, solution[i], 3.0)
         stop = time.time()
         solutions.append(result)
         times.append(stop - start)
+        print(f'***{i}***')
     #solutions = [steepest_v_e(distances, solution[i]) for i in range(100)]
     scores = [cycle_score(distances, solution[0]) + cycle_score(distances, solution[1]) for solution in solutions]
     best_index = np.argmin(scores)
