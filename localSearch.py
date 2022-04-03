@@ -3,6 +3,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 import itertools
+import time
 from greedyAlgorithms_TSP import *
 
 def plot_solutions(coords, solutions_list):
@@ -95,8 +96,10 @@ def generate_candidates_inside(path):
             combinations.append([i, j])
     return combinations
 
-def steepest_v_v(distances, path):
+def random_searching(distances, path, time):
+    pass
 
+def steepest_v_v(distances, path):
     list_out = generate_candidates_outside(path)
     help_delta_out = [delta_swap_vertices_outside(distances, path, list_out[i][0], list_out[i][1])  for i in range(len(list_out))]
     vertex_out = np.argmin(help_delta_out)
@@ -223,17 +226,25 @@ def greedy_v_v(distances, path):
 
 
 def main():
-
     paths = ['data/kroA100.tsp','data/kroB100.tsp']
     start = [67, 50]
     path = paths[0]
 
     distances, coords = create_dist_matrix(path)
     solution = [random_solution(distances,i) for i in range(100)]
-    solutions = [steepest_v_e(distances, solution[i]) for i in range(100)]
+    times = []
+    solutions = []
+    for i in range(100):
+        start = time.time()
+        result = greedy_v_v(distances, solution[i])
+        stop = time.time()
+        solutions.append(result)
+        times.append(stop - start)
+    #solutions = [steepest_v_e(distances, solution[i]) for i in range(100)]
     scores = [cycle_score(distances, solution[0]) + cycle_score(distances, solution[1]) for solution in solutions]
     best_index = np.argmin(scores)
-    print(f'Steepest: {np.mean(scores)}({np.min(scores)}-{np.max(scores)})')
+    print(f'Steepest results: {np.mean(scores)}({np.min(scores)}-{np.max(scores)})')
+    print(f'Steepest time: {np.mean(times)}({np.min(times)}-{np.max(times)})')
     plot_solutions(coords, solutions[best_index])
 
     '''distances, coords = create_dist_matrix(path)
