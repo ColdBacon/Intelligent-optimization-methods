@@ -247,16 +247,24 @@ def greddy(distances, path,n,inside):
     list_in_a = generate_candidates_inside(path[0])
     list_in_b = generate_candidates_inside(path[1])
 
-    random.shuffle(list_out)
-    random.shuffle(list_in_a)
-    random.shuffle(list_in_b)
-
     help_delta_out, help_delta_in_a, help_delta_in_b = 0, 0, 0
     neig = [help_delta_out, help_delta_in_a, help_delta_in_b]
     len_list = [len(list_out), len(list_in_a), len(list_in_b)]
-    c = 0
+
+
+    c =  random.randint(0,len_list[n]-1)
+    c_counter = len_list[n]-1 - c
+    rever = 1
+
 
     while neig[n] >= 0 and c < len_list[n]:
+
+        if c == len_list[n]-1 and rever == 1:
+            c = 0
+            len_list[n] = c_counter
+            rever = 0
+
+
         if n == 0:
             help_delta_out = delta_swap_vertices_outside(distances, path, list_out[c][0], list_out[c][1])
             i, j = list_out[c]
@@ -281,50 +289,108 @@ def greddy(distances, path,n,inside):
     return neig[n], i, j
 
 def greedy_v_v(distances, path):
+    random.seed()
+    k = random.randint(0, 1)
+    if k == 0:
 
-    while True:
-        help_delta,i,j = greddy(distances, path,0,0)
-        path = swap_vertices_outside(path, i, j)
-        licz = licz + 1
-        if help_delta >= 0:
-            break
-
-    while True:
-
-        help_delta, i, j = greddy(distances, path, 1,0)
-        path =[swap_vertices_inside(path[0], i, j), path[1]]
-        if help_delta >= 0:
+        while True:
+            help_delta,i,j = greddy(distances, path,0,0)
+            if help_delta < 0:
+             path = swap_vertices_outside(path, i, j)
+            if help_delta >= 0:
                 break
 
-    while True:
+        while True:
 
-        help_delta, i, j = greddy(distances, path, 2,0)
-        path = [path[0], swap_vertices_inside(path[1], i, j)]
-        if help_delta >= 0:
-            return path
+            help_delta, i, j = greddy(distances, path, 1,0)
+            if help_delta < 0:
+             path =[swap_vertices_inside(path[0], i, j), path[1]]
+            if help_delta >= 0:
+                    break
+
+        while True:
+
+            help_delta, i, j = greddy(distances, path, 2,0)
+            if help_delta < 0:
+             path = [path[0], swap_vertices_inside(path[1], i, j)]
+            if help_delta >= 0:
+                return path
+    else:
+        while True:
+
+            help_delta, i, j = greddy(distances, path, 1, 0)
+            if help_delta < 0:
+                path = [swap_vertices_inside(path[0], i, j), path[1]]
+            if help_delta >= 0:
+                break
+
+        while True:
+
+            help_delta, i, j = greddy(distances, path, 2, 0)
+            if help_delta < 0:
+                path = [path[0], swap_vertices_inside(path[1], i, j)]
+            if help_delta >= 0:
+                break
+
+        while True:
+            help_delta,i,j = greddy(distances, path,0,0)
+            if help_delta < 0:
+             path = swap_vertices_outside(path, i, j)
+            if help_delta >= 0:
+                return path
 
 def greedy_v_e(distances, path):
-    licz = 0
-    while True:
-        help_delta, i, j = greddy(distances, path, 0,1)
-        path = swap_vertices_outside(path, i, j)
-        licz = licz + 1
-        if help_delta >= 0:
-            break
+    random.seed()
+    k = random.randint(0,1)
+    if k ==0:
+        while True:
+            help_delta, i, j = greddy(distances, path, 0,1)
+            if help_delta < 0:
+             path = swap_vertices_outside(path, i, j)
 
-    while True:
+            if help_delta >= 0:
+                break
 
-        help_delta, i, j = greddy(distances, path, 1,1)
-        path = [swap_edges_inside(path[0], i, j), path[1]]
-        if help_delta >= 0:
-            break
+        while True:
 
-    while True:
+            help_delta, i, j = greddy(distances, path, 1,1)
+            if help_delta < 0:
+                path = [swap_edges_inside(path[0], i, j), path[1]]
+            if help_delta >= 0:
+                break
 
-        help_delta, i, j = greddy(distances, path, 2,1)
-        path = [path[0], swap_edges_inside(path[1], i, j)]
-        if help_delta >= 0:
-            return path
+        while True:
+
+            help_delta, i, j = greddy(distances, path, 2,1)
+            if help_delta < 0:
+                path = [path[0], swap_edges_inside(path[1], i, j)]
+            if help_delta >= 0:
+                return path
+    else:
+
+        while True:
+
+            help_delta, i, j = greddy(distances, path, 1, 1)
+            if help_delta < 0:
+                path = [swap_edges_inside(path[0], i, j), path[1]]
+            if help_delta >= 0:
+                break
+
+        while True:
+
+            help_delta, i, j = greddy(distances, path, 2, 1)
+            if help_delta < 0:
+                path = [path[0], swap_edges_inside(path[1], i, j)]
+            if help_delta >= 0:
+                break
+
+        while True:
+            help_delta, i, j = greddy(distances, path, 0, 1)
+            if help_delta < 0:
+                path = swap_vertices_outside(path, i, j)
+
+            if help_delta >= 0:
+                return path
 
 def main():
     paths = ['data/kroA100.tsp', 'data/kroB100.tsp']
@@ -337,10 +403,11 @@ def main():
     solutions = []
     for i in range(100):
         start = time.time()
-        result = random_searching(distances, solution[i], 2.0)
+        result = greedy_v_e(distances, solution[i])
         stop = time.time()
         solutions.append(result)
         times.append(stop - start)
+
 
     # solutions = [steepest_v_e(distances, solution[i]) for i in range(100)]
     scores = [cycle_score(distances, solution[0]) + cycle_score(distances, solution[1]) for solution in solutions]
